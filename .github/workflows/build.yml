@@ -3,6 +3,9 @@ name: Build Multi-Platform Executables
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
+      - '*'
   pull_request:
     branches: [ main, master ]
   release:
@@ -125,29 +128,31 @@ jobs:
         retention-days: 30
         if-no-files-found: error
     
-    - name: Upload to release (if release)
-      if: github.event_name == 'release' && steps.find_exe.outputs.executable_path != '' && !contains(steps.find_exe.outputs.executable_path, '.app')
+    - name: Upload to release (if release or tag)
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && steps.find_exe.outputs.executable_path != '' && !contains(steps.find_exe.outputs.executable_path, '.app')
       uses: softprops/action-gh-release@v1
       with:
         files: ${{ steps.find_exe.outputs.executable_path }}
         name: ${{ matrix.executable_name }}
+        tag_name: ${{ github.ref_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    - name: Create macOS app archive (if release and macOS)
-      if: github.event_name == 'release' && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+    - name: Create macOS app archive (if release/tag and macOS)
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
       run: |
         cd dist
         zip -r "${{ matrix.executable_name }}.zip" "${{ matrix.executable_name }}.app"
         echo "app_archive_path=dist/${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
       id: create_app_archive
     
-    - name: Upload macOS app to release (if release)
-      if: github.event_name == 'release' && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+    - name: Upload macOS app to release (if release/tag)
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
       uses: softprops/action-gh-release@v1
       with:
         files: ${{ steps.create_app_archive.outputs.app_archive_path }}
         name: ${{ matrix.executable_name }}.zip
+        tag_name: ${{ github.ref_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
