@@ -11,11 +11,16 @@ on:
   release:
     types: [ published ]
 
+permissions:
+  contents: write
+  actions: read
+  checks: write
+
 jobs:
   build:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-13]
         include:
           - os: ubuntu-latest
             platform: linux
@@ -25,7 +30,7 @@ jobs:
             platform: windows
             executable_name: 小宝工具集之点击器.exe
             build_script: build_windows.bat
-          - os: macos-latest
+          - os: macos-13
             platform: macos
             executable_name: 小宝工具集之点击器
             build_script: build_macos.sh
@@ -128,31 +133,31 @@ jobs:
         retention-days: 30
         if-no-files-found: error
     
-    - name: Upload to release (if release or tag)
-      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && steps.find_exe.outputs.executable_path != '' && !contains(steps.find_exe.outputs.executable_path, '.app')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: ${{ steps.find_exe.outputs.executable_path }}
-        name: ${{ matrix.executable_name }}
-        tag_name: ${{ github.ref_name }}
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    - name: Create macOS app archive (if release/tag and macOS)
-      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+    - name: Prepare release file
+      if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
+      id: prepare_release
       run: |
-        cd dist
-        zip -r "${{ matrix.executable_name }}.zip" "${{ matrix.executable_name }}.app"
-        echo "app_archive_path=dist/${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
-      id: create_app_archive
+        if [ "${{ matrix.platform }}" = "macos" ] && [[ "${{ steps.find_exe.outputs.executable_path }}" == *".app" ]]; then
+          # macOS .app 包需要压缩
+          cd dist
+          zip -r "${{ matrix.executable_name }}.zip" "${{ matrix.executable_name }}.app"
+          echo "release_file=dist/${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
+          echo "release_name=${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
+        else
+          # 其他平台直接使用可执行文件
+          echo "release_file=${{ steps.find_exe.outputs.executable_path }}" >> $GITHUB_OUTPUT
+          echo "release_name=${{ matrix.executable_name }}" >> $GITHUB_OUTPUT
+        fi
     
-    - name: Upload macOS app to release (if release/tag)
-      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+    - name: Upload to release
+      if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.create_app_archive.outputs.app_archive_path }}
-        name: ${{ matrix.executable_name }}.zip
+        files: ${{ steps.prepare_release.outputs.release_file }}
+        name: ${{ steps.prepare_release.outputs.release_name }}
         tag_name: ${{ github.ref_name }}
+        draft: false
+        prerelease: false
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
