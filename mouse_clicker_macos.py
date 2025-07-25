@@ -19,9 +19,13 @@ import json
 from typing import Tuple, Optional
 try:
     from pynput import mouse
+    # 暂时禁用键盘监听，避免兼容性问题
+    # from pynput import keyboard
     PYNPUT_AVAILABLE = True
+    KEYBOARD_AVAILABLE = False  # 暂时禁用
 except ImportError:
     PYNPUT_AVAILABLE = False
+    KEYBOARD_AVAILABLE = False
     print("警告: pynput未安装，将使用简化的录制功能")
     print("要使用完整的全局录制功能，请运行: pip install pynput")
 
@@ -229,6 +233,7 @@ class MacOSMouseClickerGUI:
         self.recorded_actions = []
         self.recording_start_time = None
         self.mouse_listener = None
+        self.keyboard_listener = None
         
         # 创建界面
         self.create_widgets()
@@ -644,16 +649,40 @@ class MacOSMouseClickerGUI:
         self.recorded_actions = []
         self.recording_start_time = time.time()
         
-        # 启动鼠标监听器
-        self.mouse_listener = mouse.Listener(
-            on_click=self.on_mouse_click
-        )
-        self.mouse_listener.start()
+        # 启动鼠标和键盘监听器
+        try:
+            self.mouse_listener = mouse.Listener(
+                on_click=self.on_mouse_click
+            )
+            self.mouse_listener.start()
+            
+            # 暂时禁用键盘监听器，避免兼容性问题
+            if KEYBOARD_AVAILABLE:
+                try:
+                    from pynput import keyboard
+                    self.keyboard_listener = keyboard.Listener(
+                        on_press=self.on_key_press,
+                        on_release=self.on_key_release
+                    )
+                    self.keyboard_listener.start()
+                    self.log_message("键盘监听器启动成功")
+                except Exception as kb_e:
+                    self.log_message(f"键盘监听器启动失败: {str(kb_e)}")
+                    self.log_message("提示: 请在系统偏好设置 > 安全性与隐私 > 隐私 > 辅助功能中添加此应用")
+                    self.keyboard_listener = None
+            else:
+                self.keyboard_listener = None
+                self.log_message("键盘监听功能暂时禁用（兼容性原因）")
+                
+        except Exception as e:
+            self.log_message(f"监听器启动失败: {str(e)}")
+            messagebox.showerror("错误", f"监听器启动失败: {str(e)}")
+            return
         
         self.record_button.config(state='disabled')
         self.stop_record_button.config(state='normal')
         self.replay_button.config(state="disabled")
-        self.log_message("开始录制全局鼠标操作...")
+        self.log_message("开始录制全局鼠标和键盘操作...")
     
     def stop_recording(self):
         """停止录制操作"""
@@ -663,10 +692,13 @@ class MacOSMouseClickerGUI:
         
         self.is_recording = False
         
-        # 停止鼠标监听器
+        # 停止鼠标和键盘监听器
         if self.mouse_listener:
             self.mouse_listener.stop()
             self.mouse_listener = None
+        if self.keyboard_listener:
+            self.keyboard_listener.stop()
+            self.keyboard_listener = None
         
         # 更新按钮状态
         self.record_button.config(state="normal")
@@ -677,7 +709,11 @@ class MacOSMouseClickerGUI:
         if self.recorded_actions:
             self.log_message(f"录制完成，共录制了 {len(self.recorded_actions)} 个操作:")
             for i, action in enumerate(self.recorded_actions, 1):
-                self.log_message(f"  {i}. {action['type']} 在 ({action['x']}, {action['y']}) - 延迟: {action['delay']:.2f}秒")
+                if action.get('action_category') == 'keyboard':
+                    self.log_message(f"  {i}. {action['type']} 按键: {action['key']} - 延迟: {action['delay']:.2f}秒")
+                else:
+                    # 鼠标操作
+                    self.log_message(f"  {i}. {action['type']} 在 ({action.get('x', 0)}, {action.get('y', 0)}) - 延迟: {action['delay']:.2f}秒")
         else:
             self.log_message("录制完成，但没有录制到任何操作")
     
@@ -698,8 +734,47 @@ class MacOSMouseClickerGUI:
         
         self.record_action(action_type, x, y)
     
+    def on_key_press(self, key):
+        """键盘按下事件处理"""
+        if not self.is_recording or not hasattr(self, 'keyboard_listener') or self.keyboard_listener is None:
+            return
+        
+        # 记录按键按下事件
+        try:
+            if hasattr(key, 'char') and key.char is not None:
+                # 普通字符键
+                key_name = key.char
+            else:
+                # 特殊键（如Ctrl, Alt, Enter等）
+                key_name = str(key).replace('Key.', '')
+            
+            self.record_key_action("按键按下", key_name)
+        except Exception as e:
+            try:
+                self.record_key_action("按键按下", str(key))
+            except:
+                pass
+    
+    def on_key_release(self, key):
+        """键盘释放事件处理"""
+        if not self.is_recording or not hasattr(self, 'keyboard_listener') or self.keyboard_listener is None:
+            return
+        
+        # 记录按键释放事件（主要用于组合键）
+        try:
+            if hasattr(key, 'char') and key.char is not None:
+                key_name = key.char
+            else:
+                key_name = str(key).replace('Key.', '')
+            
+            # 只记录特殊键的释放事件
+            if not hasattr(key, 'char') or key.char is None:
+                self.record_key_action("按键释放", key_name)
+        except Exception as e:
+            pass
+    
     def record_action(self, action_type, x, y):
-        """记录一个操作"""
+        """记录一个鼠标操作"""
         if not self.is_recording:
             return
         
@@ -708,16 +783,34 @@ class MacOSMouseClickerGUI:
         
         action = {
             'type': action_type,
+            'action_category': 'mouse',
             'x': x,
             'y': y,
-            'delay': delay,
-            'timestamp': current_time
+            'delay': delay
+        }
+        
+        self.recorded_actions.append(action)
+        self.recording_start_time = current_time
+    
+    def record_key_action(self, action_type, key_name):
+        """记录一个键盘操作"""
+        if not self.is_recording:
+            return
+        
+        current_time = time.time()
+        delay = current_time - self.recording_start_time if self.recorded_actions else 0
+        
+        action = {
+            'type': action_type,
+            'action_category': 'keyboard',
+            'key': key_name,
+            'delay': delay
         }
         
         self.recorded_actions.append(action)
         self.recording_start_time = current_time
         
-        self.log_message(f"录制操作: {action_type} 位置:({x},{y})")
+        # 不在这里记录日志，避免重复
     
     def replay_actions(self):
         """回放录制的操作"""
@@ -760,33 +853,74 @@ class MacOSMouseClickerGUI:
                 
                 # 执行操作
                 try:
-                    x, y = action['x'], action['y']
                     action_type = action['type']
+                    action_category = action.get('action_category', 'mouse')
                     
-                    if self.method_var.get() == "pyautogui":
-                        if action_type in ["单击", "左键单击"]:
-                            pyautogui.click(x, y)
-                        elif action_type == "双击":
-                            pyautogui.doubleClick(x, y)
-                        elif action_type in ["右键点击", "右键单击"]:
-                            pyautogui.rightClick(x, y)
-                        elif action_type == "中键单击":
-                            pyautogui.click(x, y, button='middle')
-                        else:
-                            # 其他类型的点击，默认使用左键
-                            pyautogui.click(x, y)
+                    if action_category == 'keyboard':
+                        # 键盘操作
+                        key_name = action['key']
+                        self.log_message(f"  执行: {action_type} 按键: {key_name}")
+                        
+                        if action_type == "按键按下":
+                            # 处理特殊键
+                            if key_name in ['enter', 'return']:
+                                pyautogui.press('enter')
+                            elif key_name in ['cmd', 'command']:
+                                pyautogui.keyDown('cmd')
+                            elif key_name in ['ctrl', 'control']:
+                                pyautogui.keyDown('ctrl')
+                            elif key_name in ['alt', 'option']:
+                                pyautogui.keyDown('alt')
+                            elif key_name in ['shift']:
+                                pyautogui.keyDown('shift')
+                            elif key_name in ['space']:
+                                pyautogui.press('space')
+                            elif key_name in ['tab']:
+                                pyautogui.press('tab')
+                            elif len(key_name) == 1:
+                                # 普通字符
+                                pyautogui.press(key_name)
+                            else:
+                                # 其他特殊键
+                                pyautogui.press(key_name)
+                        elif action_type == "按键释放":
+                            # 释放修饰键
+                            if key_name in ['cmd', 'command']:
+                                pyautogui.keyUp('cmd')
+                            elif key_name in ['ctrl', 'control']:
+                                pyautogui.keyUp('ctrl')
+                            elif key_name in ['alt', 'option']:
+                                pyautogui.keyUp('alt')
+                            elif key_name in ['shift']:
+                                pyautogui.keyUp('shift')
                     else:
-                        if action_type in ["单击", "左键单击"]:
-                            self.clicker.click_with_applescript(x, y)
-                        elif action_type == "双击":
-                            self.clicker.double_click_with_applescript(x, y)
-                        elif action_type in ["右键点击", "右键单击"]:
-                            self.clicker.right_click_with_applescript(x, y)
+                        # 鼠标操作
+                        x, y = action.get('x', 0), action.get('y', 0)
+                        
+                        if self.method_var.get() == "pyautogui":
+                            if action_type in ["单击", "左键单击"]:
+                                pyautogui.click(x, y)
+                            elif action_type == "双击":
+                                pyautogui.doubleClick(x, y)
+                            elif action_type in ["右键点击", "右键单击"]:
+                                pyautogui.rightClick(x, y)
+                            elif action_type == "中键单击":
+                                pyautogui.click(x, y, button='middle')
+                            else:
+                                # 其他类型的点击，默认使用左键
+                                pyautogui.click(x, y)
                         else:
-                            # 其他类型的点击，默认使用左键
-                            self.clicker.click_with_applescript(x, y)
-                    
-                    self.log_message(f"  执行: {action_type} 位置:({x},{y})")
+                            if action_type in ["单击", "左键单击"]:
+                                self.clicker.click_with_applescript(x, y)
+                            elif action_type == "双击":
+                                self.clicker.double_click_with_applescript(x, y)
+                            elif action_type in ["右键点击", "右键单击"]:
+                                self.clicker.right_click_with_applescript(x, y)
+                            else:
+                                # 其他类型的点击，默认使用左键
+                                self.clicker.click_with_applescript(x, y)
+                        
+                        self.log_message(f"  执行: {action_type} 位置:({x},{y})")
                     
                 except Exception as e:
                     self.log_message(f"  执行失败: {action_type} - {e}")
