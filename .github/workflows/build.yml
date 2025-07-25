@@ -189,7 +189,8 @@ jobs:
         files: ${{ steps.prepare_release_unix.outputs.release_file || steps.prepare_release_windows.outputs.release_file }}
         tag_name: ${{ github.ref_name }}
         draft: false
-        prerelease: false        fail_on_unmatched_files: true
+        prerelease: false
+        fail_on_unmatched_files: true
         overwrite: true
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
