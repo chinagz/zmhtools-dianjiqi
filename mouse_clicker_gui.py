@@ -10,6 +10,7 @@ from tkinter import ttk, messagebox, scrolledtext
 import pyautogui
 import time
 import threading
+import platform
 from typing import Tuple
 
 class MouseClickerGUI:
@@ -19,9 +20,24 @@ class MouseClickerGUI:
         self.root.geometry("600x700")
         self.root.resizable(True, True)
         
-        # 设置pyautogui
-        pyautogui.FAILSAFE = True
-        pyautogui.PAUSE = 0.1
+        # 设置pyautogui - 根据平台优化
+        current_platform = platform.system()
+        if current_platform == 'Windows':
+            # Windows平台优化设置
+            pyautogui.FAILSAFE = True
+            pyautogui.PAUSE = 0.1
+            # 确保在Windows上正确处理DPI缩放
+            try:
+                import ctypes
+                ctypes.windll.shcore.SetProcessDpiAwareness(1)
+            except:
+                pass  # 如果设置失败，继续使用默认设置
+        elif current_platform == 'Darwin':  # macOS
+            pyautogui.FAILSAFE = False  # macOS上可能导致问题
+            pyautogui.PAUSE = 0.2
+        else:  # Linux和其他平台
+            pyautogui.FAILSAFE = True
+            pyautogui.PAUSE = 0.1
         
         # 变量
         self.is_running = False
@@ -296,6 +312,22 @@ class MouseClickerGUI:
 
 def main():
     root = tk.Tk()
+    
+    # Windows平台特定设置
+    if platform.system() == 'Windows':
+        try:
+            # 设置Windows任务栏图标
+            import ctypes
+            myappid = 'xiaobao.tools.clicker.1.0.0'  # 应用程序ID
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            
+            # 确保窗口在前台显示
+            root.lift()
+            root.attributes('-topmost', True)
+            root.after_idle(lambda: root.attributes('-topmost', False))
+        except:
+            pass  # 如果设置失败，继续正常启动
+    
     app = MouseClickerGUI(root)
     
     # 设置窗口图标（如果有的话）

@@ -142,14 +142,14 @@ jobs:
           # macOS .app 包需要压缩
           cd dist
           version_tag="${{ github.ref_name }}"
-          zip -r "${{ matrix.executable_name }}-macos-${version_tag}.zip" "${{ matrix.executable_name }}.app"
-          echo "release_file=dist/${{ matrix.executable_name }}-macos-${version_tag}.zip" >> $GITHUB_OUTPUT
-          echo "release_name=${{ matrix.executable_name }}-macos-${version_tag}.zip" >> $GITHUB_OUTPUT
+          zip -r "xiaobaodianjiqi-${{ matrix.executable_name }}-macos-${version_tag}.zip" "${{ matrix.executable_name }}.app"
+          echo "release_file=dist/xiaobaodianjiqi-${{ matrix.executable_name }}-macos-${version_tag}.zip" >> $GITHUB_OUTPUT
+          echo "release_name=xiaobaodianjiqi-${{ matrix.executable_name }}-macos-${version_tag}.zip" >> $GITHUB_OUTPUT
         else
           # Linux平台：创建带平台标识和版本号的文件副本
           original_path="${{ steps.find_exe.outputs.executable_path }}"
           version_tag="${{ github.ref_name }}"
-          new_name="${{ matrix.executable_name }}-linux-${version_tag}"
+          new_name="xiaobaodianjiqi-${{ matrix.executable_name }}-linux-${version_tag}"
           
           # 获取文件所在目录
           file_dir=$(dirname "$original_path")
@@ -170,7 +170,7 @@ jobs:
         $originalPath = "${{ steps.find_exe.outputs.executable_path }}"
         $baseName = "${{ matrix.executable_name }}" -replace '\.exe$', ''
         $versionTag = "${{ github.ref_name }}"
-        $newName = "$baseName-windows-$versionTag.exe"
+        $newName = "xiaobaodianjiqi-$baseName-windows-$versionTag.exe"
         
         Write-Host "=== Windows文件准备调试信息 ==="
         Write-Host "原始路径: $originalPath"

@@ -22,7 +22,7 @@ pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
     --hidden-import=tkinter ^
     --noconfirm ^
     --clean ^
-    mouse_clicker_macos.py
+    mouse_clicker_gui.py
 
 REM 创建输出目录
 if not exist "dist\windows" mkdir "dist\windows"
