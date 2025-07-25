@@ -76,9 +76,9 @@ class MouseClickerGUI:
         
         # 全局快捷键监听器
         self.global_hotkey_listener = None
-        self.setup_global_hotkeys()
         
         self.setup_ui()
+        self.setup_global_hotkeys()
         self.update_position()
         
     def setup_ui(self):
