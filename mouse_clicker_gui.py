@@ -29,6 +29,20 @@ class MouseClickerGUI:
         self.root.geometry("600x700")
         self.root.resizable(True, True)
         
+        # 设置窗口图标
+        try:
+            import os
+            icon_path = os.path.join(os.path.dirname(__file__), "icon.png")
+            if os.path.exists(icon_path):
+                # 使用PNG图标文件
+                self.root.iconphoto(True, tk.PhotoImage(file=icon_path))
+            else:
+                # 如果图标文件不存在，使用默认图标
+                pass
+        except Exception as e:
+            # 如果设置图标失败，继续运行程序
+            print(f"设置图标失败: {e}")
+        
         # 设置pyautogui - 根据平台优化
         current_platform = platform.system()
         if current_platform == 'Windows':
@@ -64,7 +78,28 @@ class MouseClickerGUI:
         
     def setup_ui(self):
         """设置用户界面"""
-        # 主框架
+        # 设置背景图片
+        try:
+            import os
+            from PIL import Image, ImageTk
+            background_path = os.path.join(os.path.dirname(__file__), "background.png")
+            if os.path.exists(background_path):
+                # 加载背景图片
+                bg_image = Image.open(background_path)
+                # 调整图片大小以适应窗口
+                bg_image = bg_image.resize((600, 700), Image.Resampling.LANCZOS)
+                self.bg_photo = ImageTk.PhotoImage(bg_image)
+                
+                # 创建背景标签
+                bg_label = tk.Label(self.root, image=self.bg_photo)
+                bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+                
+                # 确保背景在最底层
+                bg_label.lower()
+        except Exception as e:
+            print(f"设置背景图片失败: {e}")
+        
+        # 主框架 - 使用透明背景
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
         

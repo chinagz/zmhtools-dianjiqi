@@ -16,6 +16,7 @@ pip install -r requirements.txt
 
 REM 构建
 pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
+    --icon=icon.png ^
     --hidden-import=pynput ^
     --hidden-import=pynput.mouse ^
     --hidden-import=pynput.keyboard ^
