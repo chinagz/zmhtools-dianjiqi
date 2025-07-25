@@ -16,11 +16,11 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            executable_name: mouse_clicker_linux
+            executable_name: 小宝工具集之点击器
             build_script: build_linux.sh
           - os: windows-latest
             platform: windows
-            executable_name: mouse_clicker_windows.exe
+            executable_name: 小宝工具集之点击器.exe
             build_script: build_windows.bat
           - os: macos-latest
             platform: macos
@@ -59,20 +59,63 @@ jobs:
       id: find_exe
       shell: bash
       run: |
+        echo "=== 调试信息：查找可执行文件 ==="
+        echo "当前目录内容："
+        ls -la
+        echo "dist目录内容："
+        ls -la dist/ || echo "dist目录不存在"
+        
         if [ "${{ matrix.platform }}" = "windows" ]; then
-          exe_path=$(find dist -name "*.exe" -type f | head -1)
+          # Windows平台：先检查dist/windows目录
+          if [ -d "dist/windows" ]; then
+            exe_path=$(find dist/windows -name "*.exe" -type f | head -1)
+          else
+            exe_path=$(find dist -name "*.exe" -type f | head -1)
+          fi
         elif [ "${{ matrix.platform }}" = "macos" ]; then
           # macOS可能生成.app包或直接的可执行文件
           if [ -d "dist/${{ matrix.executable_name }}.app" ]; then
             exe_path="dist/${{ matrix.executable_name }}.app"
+          elif [ -d "dist/macos" ]; then
+            exe_path=$(find dist/macos -name "${{ matrix.executable_name }}" -type f | head -1)
           else
             exe_path=$(find dist -name "${{ matrix.executable_name }}" -type f | head -1)
           fi
+          # 如果没找到，尝试查找任何可执行文件
+          if [ -z "$exe_path" ]; then
+            exe_path=$(find dist -type f -executable | head -1)
+          fi
         else
-          exe_path=$(find dist -name "${{ matrix.executable_name }}" -type f | head -1)
+          # Linux平台：先检查dist/linux目录
+          if [ -d "dist/linux" ]; then
+            exe_path=$(find dist/linux -name "${{ matrix.executable_name }}" -type f | head -1)
+          else
+            exe_path=$(find dist -name "${{ matrix.executable_name }}" -type f | head -1)
+          fi
+          # 如果没找到，尝试查找任何可执行文件
+          if [ -z "$exe_path" ]; then
+            exe_path=$(find dist -type f -executable | head -1)
+          fi
         fi
+        
+        echo "找到的可执行文件路径: $exe_path"
+        
+        # 检查路径是否为空
+        if [ -z "$exe_path" ]; then
+          echo "错误：未找到可执行文件"
+          echo "dist目录完整内容："
+          find dist -type f 2>/dev/null || echo "无法列出dist目录内容"
+          exit 1
+        fi
+        
+        # 检查文件是否存在
+        if [ ! -e "$exe_path" ]; then
+          echo "错误：文件不存在: $exe_path"
+          exit 1
+        fi
+        
         echo "executable_path=$exe_path" >> $GITHUB_OUTPUT
-        echo "Found executable: $exe_path"
+        echo "成功找到可执行文件: $exe_path"
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
@@ -80,6 +123,7 @@ jobs:
         name: ${{ matrix.platform }}-executable
         path: ${{ steps.find_exe.outputs.executable_path }}
         retention-days: 30
+        if-no-files-found: error
     
     - name: Upload to release (if release)
       if: github.event_name == 'release'
