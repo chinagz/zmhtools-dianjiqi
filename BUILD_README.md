@@ -28,9 +28,9 @@ build_windows.bat
 ## 输出目录
 
 构建完成后，可执行文件将位于：
-- macOS: `dist/macos/鼠标点击器`
-- Windows: `dist/windows/鼠标点击器.exe`
-- Linux: `dist/linux/鼠标点击器`
+- macOS: `dist/macos/小宝工具集之点击器`
+- Windows: `dist/windows/小宝工具集之点击器.exe`
+- Linux: `dist/linux/小宝工具集之点击器`
 
 ## 注意事项
 

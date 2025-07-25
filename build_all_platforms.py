@@ -79,7 +79,7 @@ def build_for_current_platform():
     print(f"\n当前平台: {current_platform}")
     
     # 基础命令
-    base_cmd = "pyinstaller --onefile --windowed --name=鼠标点击器"
+    base_cmd = "pyinstaller --onefile --windowed --name=小宝工具集之点击器"
     
     # 添加隐藏导入
     hidden_imports = [
@@ -159,7 +159,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='鼠标点击器',
+    name='小宝工具集之点击器',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -177,7 +177,7 @@ exe = EXE(
 # macOS 特定配置
 app = BUNDLE(
     exe,
-    name='鼠标点击器.app',
+    name='小宝工具集之点击器.app',
     icon=None,
     bundle_identifier='com.zmhtools.mouseclicker',
 )
@@ -208,7 +208,7 @@ pip install pyinstaller
 pip install -r requirements.txt
 
 # 构建
-pyinstaller --onefile --windowed --name="鼠标点击器" \
+pyinstaller --onefile --windowed --name="小宝工具集之点击器" \
     --hidden-import=pynput \
     --hidden-import=pyautogui \
     --hidden-import=PIL \
@@ -217,9 +217,9 @@ pyinstaller --onefile --windowed --name="鼠标点击器" \
 
 # 创建输出目录
 mkdir -p dist/macos
-mv dist/鼠标点击器 dist/macos/
+mv dist/小宝工具集之点击器 dist/macos/
 
-echo "✅ macOS 版本构建完成: dist/macos/鼠标点击器"
+echo "✅ macOS 版本构建完成: dist/macos/小宝工具集之点击器"
 '''
     
     # Windows 构建脚本
@@ -240,7 +240,7 @@ pip install pyinstaller
 pip install -r requirements.txt
 
 REM 构建
-pyinstaller --onefile --windowed --name="鼠标点击器" ^
+pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
     --hidden-import=pynput ^
     --hidden-import=pyautogui ^
     --hidden-import=PIL ^
@@ -249,9 +249,9 @@ pyinstaller --onefile --windowed --name="鼠标点击器" ^
 
 REM 创建输出目录
 mkdir dist\\windows 2>nul
-move dist\\鼠标点击器.exe dist\\windows\\
+move dist\\小宝工具集之点击器.exe dist\\windows\\
 
-echo ✅ Windows 版本构建完成: dist\\windows\\鼠标点击器.exe
+echo ✅ Windows 版本构建完成: dist\\windows\\小宝工具集之点击器.exe
 pause
 '''
     
@@ -273,7 +273,7 @@ pip install pyinstaller
 pip install -r requirements.txt
 
 # 构建
-pyinstaller --onefile --name="鼠标点击器" \
+pyinstaller --onefile --name="小宝工具集之点击器" \
     --hidden-import=pynput \
     --hidden-import=pyautogui \
     --hidden-import=PIL \
@@ -282,9 +282,9 @@ pyinstaller --onefile --name="鼠标点击器" \
 
 # 创建输出目录
 mkdir -p dist/linux
-mv dist/鼠标点击器 dist/linux/
+mv dist/小宝工具集之点击器 dist/linux/
 
-echo "✅ Linux 版本构建完成: dist/linux/鼠标点击器"
+echo "✅ Linux 版本构建完成: dist/linux/小宝工具集之点击器"
 '''
     
     # 写入文件
@@ -336,9 +336,9 @@ build_windows.bat
 ## 输出目录
 
 构建完成后，可执行文件将位于：
-- macOS: `dist/macos/鼠标点击器`
-- Windows: `dist/windows/鼠标点击器.exe`
-- Linux: `dist/linux/鼠标点击器`
+- macOS: `dist/macos/小宝工具集之点击器`
+- Windows: `dist/windows/小宝工具集之点击器.exe`
+- Linux: `dist/linux/小宝工具集之点击器`
 
 ## 注意事项
 

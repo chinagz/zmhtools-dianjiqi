@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-macOS优化版鼠标模拟点击工具
+小宝工具集之点击器
 专门针对macOS系统的权限和兼容性问题进行优化
 """
 
@@ -215,12 +215,12 @@ class MacOSMouseClicker:
             print("请检查系统权限设置")
 
 class MacOSMouseClickerGUI:
-    """macOS优化版鼠标点击器GUI界面"""
+    """小宝工具集之点击器GUI界面"""
     
     def __init__(self):
         self.clicker = MacOSMouseClicker()
         self.root = tk.Tk()
-        self.root.title("macOS优化版鼠标点击器")
+        self.root.title("小宝工具集之点击器")
         self.root.geometry("600x700")
         self.root.resizable(True, True)
         
@@ -945,12 +945,12 @@ class MacOSMouseClickerGUI:
         
     def run(self):
         """运行GUI"""
-        self.log_message("macOS优化版鼠标点击器已启动")
+        self.log_message("小宝工具集之点击器已启动")
         self.log_message("请设置坐标并选择点击操作")
         self.root.mainloop()
 
 def main():
-    parser = argparse.ArgumentParser(description='macOS优化版鼠标模拟点击工具')
+    parser = argparse.ArgumentParser(description='小宝工具集之点击器')
     parser.add_argument('--gui', '-g', action='store_true', help='启动图形界面')
     parser.add_argument('--position', '-p', action='store_true', help='获取当前鼠标位置')
     parser.add_argument('--click', '-c', nargs=2, type=int, metavar=('X', 'Y'), help='单击指定坐标')
@@ -1004,7 +1004,7 @@ def main():
     
     else:
         # 交互模式
-        print("\n=== macOS优化版鼠标点击工具 ===")
+        print("\n=== 小宝工具集之点击器 ===")
         print("1. 获取鼠标位置")
         print("2. 单击")
         print("3. 双击")

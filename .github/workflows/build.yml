@@ -24,7 +24,7 @@ jobs:
             build_script: build_windows.bat
           - os: macos-latest
             platform: macos
-            executable_name: 鼠标点击器
+            executable_name: 小宝工具集之点击器
             build_script: build_macos.sh
     
     runs-on: ${{ matrix.os }}

@@ -15,10 +15,10 @@ pip install pyinstaller
 pip install -r requirements.txt
 
 # 构建
-pyinstaller --onefile --name="鼠标点击器"     --hidden-import=pynput     --hidden-import=pyautogui     --hidden-import=PIL     --hidden-import=tkinter     mouse_clicker_macos.py
+pyinstaller --onefile --name="小宝工具集之点击器"     --hidden-import=pynput     --hidden-import=pyautogui     --hidden-import=PIL     --hidden-import=tkinter     mouse_clicker_macos.py
 
 # 创建输出目录
 mkdir -p dist/linux
-mv dist/鼠标点击器 dist/linux/
+mv dist/小宝工具集之点击器 dist/linux/
 
-echo "✅ Linux 版本构建完成: dist/linux/鼠标点击器"
+echo "✅ Linux 版本构建完成: dist/linux/小宝工具集之点击器"

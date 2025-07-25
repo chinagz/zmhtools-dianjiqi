@@ -15,7 +15,7 @@ pip install pyinstaller
 pip install -r requirements.txt
 
 REM 构建
-pyinstaller --onefile --windowed --name="鼠标点击器" ^
+pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
     --hidden-import=pynput ^
     --hidden-import=pyautogui ^
     --hidden-import=PIL ^
@@ -23,8 +23,8 @@ pyinstaller --onefile --windowed --name="鼠标点击器" ^
     mouse_clicker_macos.py
 
 REM 创建输出目录
-mkdir dist\windows 2>nul
-move dist\鼠标点击器.exe dist\windows\
+if not exist "dist\windows" mkdir "dist\windows"
+move dist\小宝工具集之点击器.exe dist\windows\
 
-echo ✅ Windows 版本构建完成: dist\windows\鼠标点击器.exe
+echo ✅ Windows 版本构建完成: dist\windows\小宝工具集之点击器.exe
 pause

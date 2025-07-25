@@ -51,7 +51,7 @@ git push origin main  # 或 master
 | 平台 | 运行环境 | 输出文件名 | 构建脚本 |
 |------|----------|------------|----------|
 | Windows | windows-latest | mouse_clicker_windows.exe | build_windows.bat |
-| macOS | macos-latest | 鼠标点击器 | build_macos.sh |
+| macOS | macos-latest | 小宝工具集之点击器 | build_macos.sh |
 | Linux | ubuntu-latest | mouse_clicker_linux | build_linux.sh |
 
 ### Python版本
