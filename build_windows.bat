@@ -1,0 +1,30 @@
+
+@echo off
+REM Windows 构建脚本
+
+echo 开始构建 Windows 版本...
+
+REM 激活虚拟环境（如果存在）
+if exist "venv" (
+    call venv\Scripts\activate.bat
+    echo ✅ 已激活虚拟环境
+)
+
+REM 安装依赖
+pip install pyinstaller
+pip install -r requirements.txt
+
+REM 构建
+pyinstaller --onefile --windowed --name="鼠标点击器" ^
+    --hidden-import=pynput ^
+    --hidden-import=pyautogui ^
+    --hidden-import=PIL ^
+    --hidden-import=tkinter ^
+    mouse_clicker_macos.py
+
+REM 创建输出目录
+mkdir dist\windows 2>nul
+move dist\鼠标点击器.exe dist\windows\
+
+echo ✅ Windows 版本构建完成: dist\windows\鼠标点击器.exe
+pause
