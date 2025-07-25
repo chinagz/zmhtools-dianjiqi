@@ -133,7 +133,7 @@ jobs:
           fi
           # 如果没找到，尝试查找任何可执行文件（macOS兼容）
           if [ -z "$exe_path" ]; then
-            exe_path=$(find dist -type f -perm +111 | head -1)
+            exe_path=$(find dist -type f -executable | head -1)
           fi
         else
           # Linux平台：先检查dist/linux目录
@@ -142,9 +142,9 @@ jobs:
           else
             exe_path=$(find dist -name "${{ matrix.executable_name }}" -type f | head -1)
           fi
-          # 如果没找到，尝试查找任何可执行文件（macOS兼容）
+          # 如果没找到，尝试查找任何可执行文件（Linux兼容）
           if [ -z "$exe_path" ]; then
-            exe_path=$(find dist -type f -perm +111 | head -1)
+            exe_path=$(find dist -type f -executable | head -1)
           fi
         fi
         
@@ -278,6 +278,6 @@ jobs:
     - name: List built executables
       run: |
         echo "=== 构建完成的可执行文件 ==="
-        find . -type f \( -perm +111 -o -name "*.exe" -o -name "*.app" \) | sort
+        find . -type f \( -executable -o -name "*.exe" -o -name "*.app" \) | sort
         echo "=== 文件大小信息 ==="
-        find . -type f \( -perm +111 -o -name "*.exe" \) | xargs ls -lh
+        find . -type f \( -executable -o -name "*.exe" \) | xargs ls -lh

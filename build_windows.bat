@@ -44,13 +44,13 @@ for /L %%i in (1,1,%max_attempts%) do (
     REM 使用Windows专用spec文件构建（如果存在）
      if exist "pyinstaller_windows.spec" (
          echo 使用pyinstaller_windows.spec文件构建...
-         pyinstaller pyinstaller_windows.spec --noconfirm --clean --log-level=WARN
+         echo y | pyinstaller pyinstaller_windows.spec --noconfirm --clean --log-level=WARN --distpath=dist --workpath=build
      ) else if exist "pyinstaller.spec" (
          echo 使用pyinstaller.spec文件构建...
-         pyinstaller pyinstaller.spec --noconfirm --clean --log-level=WARN
+         echo y | pyinstaller pyinstaller.spec --noconfirm --clean --log-level=WARN --distpath=dist --workpath=build
      ) else (
         echo 使用命令行参数构建...
-        pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
+        echo y | pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
             --icon=icon.png ^
             --hidden-import=pynput ^
             --hidden-import=pynput.mouse ^
@@ -66,6 +66,8 @@ for /L %%i in (1,1,%max_attempts%) do (
             --noconfirm ^
             --clean ^
             --log-level=WARN ^
+            --distpath=dist ^
+            --workpath=build ^
             mouse_clicker_gui.py
     )
     

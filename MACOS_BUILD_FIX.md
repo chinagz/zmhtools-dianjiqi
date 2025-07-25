@@ -27,7 +27,7 @@ find dist -type f -executable | head -1
 
 ### 1. 修复find命令语法
 
-将不兼容的 `-executable` 参数替换为macOS兼容的 `-perm +111`：
+将不兼容的 `-executable` 参数替换为跨平台兼容的 `-perm /111`：
 
 **修复前：**
 ```bash
@@ -36,18 +36,20 @@ find dist -type f -executable | head -1
 
 **修复后：**
 ```bash
-find dist -type f -perm +111 | head -1
+find dist -type f -perm /111 | head -1
 ```
 
 ### 2. 权限参数说明
 
-`-perm +111` 的含义：
-- `+111`：查找具有任何执行权限的文件
+`-perm /111` 的含义：
+- `/111`：查找具有任何执行权限的文件（现代语法）
 - `1`：其他用户执行权限
 - `1`：组执行权限  
 - `1`：所有者执行权限
 
-这与 `-executable` 的功能等效，但兼容所有Unix系统。
+这与 `-executable` 的功能等效，且兼容现代Unix系统。
+
+**注意**：`-perm +111` 语法已被弃用，应使用 `-perm /111`。
 
 ### 3. 修复的具体位置
 
@@ -62,7 +64,7 @@ fi
 
 # 修复后
 if [ -z "$exe_path" ]; then
-  exe_path=$(find dist -type f -perm +111 | head -1)
+  exe_path=$(find dist -type f -perm /111 | head -1)
 fi
 ```
 
@@ -75,7 +77,7 @@ fi
 
 # 修复后
 if [ -z "$exe_path" ]; then
-  exe_path=$(find dist -type f -perm +111 | head -1)
+  exe_path=$(find dist -type f -perm /111 | head -1)
 fi
 ```
 
@@ -86,8 +88,8 @@ find . -type f -executable -o -name "*.exe" -o -name "*.app" | sort
 find . -type f -executable -o -name "*.exe" | xargs ls -lh
 
 # 修复后
-find . -type f \( -perm +111 -o -name "*.exe" -o -name "*.app" \) | sort
-find . -type f \( -perm +111 -o -name "*.exe" \) | xargs ls -lh
+find . -type f \( -perm /111 -o -name "*.exe" -o -name "*.app" \) | sort
+find . -type f \( -perm /111 -o -name "*.exe" \) | xargs ls -lh
 ```
 
 ## 🔧 技术细节
@@ -96,10 +98,10 @@ find . -type f \( -perm +111 -o -name "*.exe" \) | xargs ls -lh
 
 | 功能 | Linux (GNU find) | macOS (BSD find) | 兼容写法 |
 |------|------------------|------------------|----------|
-| 查找可执行文件 | `-executable` | 不支持 | `-perm +111` |
-| 查找可读文件 | `-readable` | 不支持 | `-perm +444` |
-| 查找可写文件 | `-writable` | 不支持 | `-perm +222` |
-| 复杂权限 | `-perm /mode` | `-perm +mode` | `-perm +mode` |
+| 查找可执行文件 | `-executable` | 不支持 | `-perm /111` |
+| 查找可读文件 | `-readable` | 不支持 | `-perm /444` |
+| 查找可写文件 | `-writable` | 不支持 | `-perm /222` |
+| 复杂权限 | `-perm /mode` | `-perm /mode` | `-perm /mode` |
 
 ### 权限位说明
 
@@ -118,10 +120,13 @@ find . -type f \( -perm +111 -o -name "*.exe" \) | xargs ls -lh
 ```
 
 常用组合：
-- `+111`：任何执行权限
-- `+444`：任何读权限
-- `+222`：任何写权限
-- `+755`：所有者全权限，其他用户读执行权限
+- `/111`：任何执行权限（现代语法）
+- `/444`：任何读权限
+- `/222`：任何写权限
+- `/755`：所有者全权限，其他用户读执行权限
+
+**已弃用语法**（避免使用）：
+- `+111`、`+444`、`+222` 等（在新版本find中可能不支持）
 
 ## 🚀 验证修复
 
@@ -130,7 +135,7 @@ find . -type f \( -perm +111 -o -name "*.exe" \) | xargs ls -lh
 1. **本地测试**：
 ```bash
 # 在macOS上测试find命令
-find . -type f -perm +111 | head -5
+find . -type f -perm /111 | head -5
 ```
 
 2. **GitHub Actions测试**：

@@ -117,11 +117,11 @@ jobs:
           if [ -d "dist/*.app" ]; then
             exe_path=$(find dist -name "*.app" -type d | head -1)
           else
-            exe_path=$(find dist -type f -perm +111 | head -1)
+            exe_path=$(find dist -type f -executable | head -1)
           fi
         else
           # Linux: 查找可执行文件
-          exe_path=$(find dist -type f -perm +111 | head -1)
+          exe_path=$(find dist -type f -executable | head -1)
         fi
         
         echo "找到的可执行文件路径: $exe_path"
