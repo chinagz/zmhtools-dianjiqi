@@ -20,6 +20,8 @@ pyinstaller --onefile --windowed --name="小宝工具集之点击器" ^
     --hidden-import=pyautogui ^
     --hidden-import=PIL ^
     --hidden-import=tkinter ^
+    --noconfirm ^
+    --clean ^
     mouse_clicker_macos.py
 
 REM 创建输出目录
