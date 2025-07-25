@@ -133,9 +133,10 @@ jobs:
         retention-days: 30
         if-no-files-found: error
     
-    - name: Prepare release file
-      if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
-      id: prepare_release
+    - name: Prepare release file (Unix)
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.os != 'windows-latest'
+      id: prepare_release_unix
+      shell: bash
       run: |
         if [ "${{ matrix.platform }}" = "macos" ] && [[ "${{ steps.find_exe.outputs.executable_path }}" == *".app" ]]; then
           # macOS .app 包需要压缩
@@ -144,17 +145,25 @@ jobs:
           echo "release_file=dist/${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
           echo "release_name=${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
         else
-          # 其他平台直接使用可执行文件
+          # Linux平台直接使用可执行文件
           echo "release_file=${{ steps.find_exe.outputs.executable_path }}" >> $GITHUB_OUTPUT
           echo "release_name=${{ matrix.executable_name }}" >> $GITHUB_OUTPUT
         fi
+    
+    - name: Prepare release file (Windows)
+      if: (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')) && matrix.os == 'windows-latest'
+      id: prepare_release_windows
+      shell: pwsh
+      run: |
+        # Windows平台直接使用可执行文件
+        echo "release_file=${{ steps.find_exe.outputs.executable_path }}" >> $env:GITHUB_OUTPUT
+        echo "release_name=${{ matrix.executable_name }}" >> $env:GITHUB_OUTPUT
     
     - name: Upload to release
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v1
       with:
-        files: ${{ steps.prepare_release.outputs.release_file }}
-        name: ${{ steps.prepare_release.outputs.release_name }}
+        files: ${{ steps.prepare_release_unix.outputs.release_file || steps.prepare_release_windows.outputs.release_file }}
         tag_name: ${{ github.ref_name }}
         draft: false
         prerelease: false
