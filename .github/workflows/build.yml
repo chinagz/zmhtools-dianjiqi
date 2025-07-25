@@ -53,7 +53,7 @@ jobs:
     - name: Build executable (Windows)
       if: matrix.os == 'windows-latest'
       run: |
-        ${{ matrix.build_script }}
+        .\${{ matrix.build_script }}
     
     - name: Find executable path
       id: find_exe
