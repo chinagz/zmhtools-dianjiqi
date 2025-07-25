@@ -167,20 +167,48 @@ jobs:
       shell: pwsh
       run: |
         # Windows平台：创建带平台标识和版本号的文件副本
-         $originalPath = "${{ steps.find_exe.outputs.executable_path }}"
-         $baseName = "${{ matrix.executable_name }}" -replace '\.exe$', ''
-         $versionTag = "${{ github.ref_name }}"
-         $newName = "$baseName-windows-$versionTag.exe"
-         
-         # 获取文件所在目录
-         $fileDir = Split-Path $originalPath -Parent
-         $newPath = Join-Path $fileDir $newName
-         
-         # 创建带平台标识和版本号的副本
-         Copy-Item $originalPath $newPath
-         
-         echo "release_file=$newPath" >> $env:GITHUB_OUTPUT
-         echo "release_name=$newName" >> $env:GITHUB_OUTPUT
+        $originalPath = "${{ steps.find_exe.outputs.executable_path }}"
+        $baseName = "${{ matrix.executable_name }}" -replace '\.exe$', ''
+        $versionTag = "${{ github.ref_name }}"
+        $newName = "$baseName-windows-$versionTag.exe"
+        
+        Write-Host "=== Windows文件准备调试信息 ==="
+        Write-Host "原始路径: $originalPath"
+        Write-Host "基础名称: $baseName"
+        Write-Host "版本标签: $versionTag"
+        Write-Host "新文件名: $newName"
+        
+        # 检查原始文件是否存在
+        if (-not (Test-Path $originalPath)) {
+            Write-Host "错误：原始文件不存在: $originalPath"
+            Get-ChildItem -Path "dist" -Recurse -File | ForEach-Object { Write-Host $_.FullName }
+            exit 1
+        }
+        
+        # 获取文件所在目录
+        $fileDir = Split-Path $originalPath -Parent
+        $newPath = Join-Path $fileDir $newName
+        
+        Write-Host "文件目录: $fileDir"
+        Write-Host "新文件路径: $newPath"
+        
+        # 创建带平台标识和版本号的副本
+        Copy-Item $originalPath $newPath
+        
+        # 验证新文件是否创建成功
+        if (Test-Path $newPath) {
+            Write-Host "✅ 文件创建成功: $newPath"
+        } else {
+            Write-Host "❌ 文件创建失败: $newPath"
+            exit 1
+        }
+        
+        # 转换为Unix风格路径用于GitHub Actions
+        $unixPath = $newPath -replace '\\', '/'
+        Write-Host "Unix风格路径: $unixPath"
+        
+        echo "release_file=$unixPath" >> $env:GITHUB_OUTPUT
+        echo "release_name=$newName" >> $env:GITHUB_OUTPUT
     
     - name: Upload to release
       if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/')
