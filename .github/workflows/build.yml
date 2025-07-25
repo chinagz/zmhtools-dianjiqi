@@ -145,9 +145,18 @@ jobs:
           echo "release_file=dist/${{ matrix.executable_name }}-macos.zip" >> $GITHUB_OUTPUT
           echo "release_name=${{ matrix.executable_name }}-macos.zip" >> $GITHUB_OUTPUT
         else
-          # Linux平台直接使用可执行文件
-          echo "release_file=${{ steps.find_exe.outputs.executable_path }}" >> $GITHUB_OUTPUT
-          echo "release_name=${{ matrix.executable_name }}-linux" >> $GITHUB_OUTPUT
+          # Linux平台：创建带平台标识的文件副本
+          original_path="${{ steps.find_exe.outputs.executable_path }}"
+          new_name="${{ matrix.executable_name }}-linux"
+          
+          # 获取文件所在目录
+          file_dir=$(dirname "$original_path")
+          
+          # 创建带平台标识的副本
+          cp "$original_path" "$file_dir/$new_name"
+          
+          echo "release_file=$file_dir/$new_name" >> $GITHUB_OUTPUT
+          echo "release_name=$new_name" >> $GITHUB_OUTPUT
         fi
     
     - name: Prepare release file (Windows)
