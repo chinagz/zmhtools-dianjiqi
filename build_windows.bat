@@ -27,4 +27,3 @@ if not exist "dist\windows" mkdir "dist\windows"
 move dist\小宝工具集之点击器.exe dist\windows\
 
 echo ✅ Windows 版本构建完成: dist\windows\小宝工具集之点击器.exe
-pause
