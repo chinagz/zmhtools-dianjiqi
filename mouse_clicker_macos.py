@@ -17,17 +17,18 @@ import threading
 import time
 import json
 from typing import Tuple, Optional
+# 完全禁用pynput以避免macOS兼容性问题
 try:
-    from pynput import mouse
-    # 暂时禁用键盘监听，避免兼容性问题
+    # from pynput import mouse
     # from pynput import keyboard
-    PYNPUT_AVAILABLE = True
-    KEYBOARD_AVAILABLE = False  # 暂时禁用
+    PYNPUT_AVAILABLE = False
+    KEYBOARD_AVAILABLE = False
+    print("⚠️ pynput功能已禁用 (macOS兼容性问题)")
+    print("✅ 基本点击功能可用")
 except ImportError:
     PYNPUT_AVAILABLE = False
     KEYBOARD_AVAILABLE = False
-    print("警告: pynput未安装，将使用简化的录制功能")
-    print("要使用完整的全局录制功能，请运行: pip install pynput")
+    print("⚠️ pynput不可用，录制功能已禁用")
 
 class MacOSMouseClicker:
     def __init__(self):
@@ -344,7 +345,7 @@ class MacOSMouseClickerGUI:
         self.delay_entry.grid(row=0, column=1, sticky=tk.W)
         
         # 录制回放功能
-        record_frame = ttk.LabelFrame(main_frame, text="录制回放功能 (仅支持鼠标)", padding="5")
+        record_frame = ttk.LabelFrame(main_frame, text="录制回放功能 (已禁用)", padding="5")
         record_frame.grid(row=7, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         self.record_button = ttk.Button(record_frame, text="开始录制", command=self.start_recording)
@@ -649,16 +650,29 @@ class MacOSMouseClickerGUI:
         self.recorded_actions = []
         self.recording_start_time = time.time()
         
-        # 启动鼠标监听器（键盘录制已禁用）
+        # 启动鼠标和键盘监听器
         try:
             self.mouse_listener = mouse.Listener(
                 on_click=self.on_mouse_click
             )
             self.mouse_listener.start()
             
-            # 键盘监听器已完全禁用
-            self.keyboard_listener = None
-            self.log_message("键盘录制功能已禁用（macOS版本仅支持鼠标录制）")
+            # 启动键盘监听器
+            if KEYBOARD_AVAILABLE:
+                try:
+                    self.keyboard_listener = keyboard.Listener(
+                        on_press=self.on_key_press,
+                        on_release=self.on_key_release
+                    )
+                    self.keyboard_listener.start()
+                    self.log_message("开始录制鼠标和键盘操作...")
+                except Exception as kb_e:
+                    self.log_message(f"键盘监听器启动失败: {kb_e}")
+                    self.log_message("仅录制鼠标操作")
+                    self.keyboard_listener = None
+            else:
+                self.keyboard_listener = None
+                self.log_message("开始录制鼠标操作（键盘功能不可用）...")
                 
         except Exception as e:
             self.log_message(f"监听器启动失败: {str(e)}")
@@ -668,7 +682,7 @@ class MacOSMouseClickerGUI:
         self.record_button.config(state='disabled')
         self.stop_record_button.config(state='normal')
         self.replay_button.config(state="disabled")
-        self.log_message("开始录制全局鼠标操作（键盘录制已禁用）...")
+        self.log_message("提示: 录制期间请避免点击应用程序窗口")
     
     def stop_recording(self):
         """停止录制操作"""
@@ -693,12 +707,16 @@ class MacOSMouseClickerGUI:
             self.replay_button.config(state="normal")
         
         if self.recorded_actions:
-            self.log_message(f"录制完成，共录制了 {len(self.recorded_actions)} 个鼠标操作:")
+            mouse_count = sum(1 for action in self.recorded_actions if action.get('action_category') == 'mouse')
+            keyboard_count = sum(1 for action in self.recorded_actions if action.get('action_category') == 'keyboard')
+            self.log_message(f"录制完成，共录制了 {len(self.recorded_actions)} 个操作 (鼠标: {mouse_count}, 键盘: {keyboard_count}):")
             for i, action in enumerate(self.recorded_actions, 1):
-                # 只显示鼠标操作（键盘录制已禁用）
-                self.log_message(f"  {i}. {action['type']} 在 ({action.get('x', 0)}, {action.get('y', 0)}) - 延迟: {action['delay']:.2f}秒")
+                if action.get('action_category') == 'keyboard':
+                    self.log_message(f"  {i}. {action['type']} - 延迟: {action['delay']:.2f}秒")
+                else:
+                    self.log_message(f"  {i}. {action['type']} 在 ({action.get('x', 0)}, {action.get('y', 0)}) - 延迟: {action['delay']:.2f}秒")
         else:
-            self.log_message("录制完成，但没有录制到任何鼠标操作")
+            self.log_message("录制完成，但没有录制到任何操作")
     
     def on_mouse_click(self, x, y, button, pressed):
         """鼠标点击事件处理"""
@@ -717,10 +735,40 @@ class MacOSMouseClickerGUI:
         
         self.record_action(action_type, x, y)
     
-    # 键盘事件处理方法已移除（macOS版本不支持键盘录制）
+    def on_key_press(self, key):
+        """键盘按下事件处理"""
+        if not self.is_recording:
+            return
+        
+        # 获取按键名称
+        try:
+            if hasattr(key, 'char') and key.char is not None:
+                key_name = key.char
+            else:
+                key_name = str(key).replace('Key.', '')
+        except:
+            key_name = str(key)
+        
+        self.record_action(f"按键按下 [{key_name}]", 0, 0, action_category='keyboard', key=key_name, key_action='press')
     
-    def record_action(self, action_type, x, y):
-        """记录一个鼠标操作"""
+    def on_key_release(self, key):
+        """键盘释放事件处理"""
+        if not self.is_recording:
+            return
+        
+        # 获取按键名称
+        try:
+            if hasattr(key, 'char') and key.char is not None:
+                key_name = key.char
+            else:
+                key_name = str(key).replace('Key.', '')
+        except:
+            key_name = str(key)
+        
+        self.record_action(f"按键释放 [{key_name}]", 0, 0, action_category='keyboard', key=key_name, key_action='release')
+    
+    def record_action(self, action_type, x, y, action_category='mouse', key=None, key_action=None):
+        """记录一个操作（鼠标或键盘）"""
         if not self.is_recording:
             return
         
@@ -729,11 +777,16 @@ class MacOSMouseClickerGUI:
         
         action = {
             'type': action_type,
-            'action_category': 'mouse',
+            'action_category': action_category,
             'x': x,
             'y': y,
             'delay': delay
         }
+        
+        # 如果是键盘操作，添加键盘相关信息
+        if action_category == 'keyboard':
+            action['key'] = key
+            action['key_action'] = key_action
         
         self.recorded_actions.append(action)
         self.recording_start_time = current_time
@@ -785,8 +838,31 @@ class MacOSMouseClickerGUI:
                     action_category = action.get('action_category', 'mouse')
                     
                     if action_category == 'keyboard':
-                        # macOS版本不支持键盘操作回放
-                        self.log_message(f"  跳过键盘操作: {action_type} (macOS版本不支持)")
+                        # 执行键盘操作
+                        key = action.get('key')
+                        key_action = action.get('key_action')
+                        
+                        if key and KEYBOARD_AVAILABLE:
+                            try:
+                                # 尝试将字符串转换为pynput的Key对象
+                                if len(key) == 1:
+                                    # 单个字符
+                                    if key_action == 'press':
+                                        pyautogui.keyDown(key)
+                                    else:
+                                        pyautogui.keyUp(key)
+                                else:
+                                    # 特殊按键
+                                    if key_action == 'press':
+                                        pyautogui.keyDown(key)
+                                    else:
+                                        pyautogui.keyUp(key)
+                                
+                                self.log_message(f"  执行: {action_type}")
+                            except Exception as kb_e:
+                                self.log_message(f"  键盘操作执行失败: {action_type} - {kb_e}")
+                        else:
+                            self.log_message(f"  跳过键盘操作: {action_type} (键盘功能不可用)")
                         continue
                     
                     # 鼠标操作

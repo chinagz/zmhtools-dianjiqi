@@ -1,3 +1,5 @@
 pyautogui>=0.9.54
 pillow>=8.0.0
 pynput>=1.7.6
+# 注意: 建议使用Python 3.11或3.12以获得最佳兼容性
+# Python 3.13可能存在pynput兼容性问题

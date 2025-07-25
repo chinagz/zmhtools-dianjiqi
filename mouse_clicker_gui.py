@@ -16,6 +16,7 @@ try:
     from pynput import mouse, keyboard
     PYNPUT_AVAILABLE = True
     KEYBOARD_AVAILABLE = True
+    print("✅ pynput录制功能已启用 (Python 3.11环境)")
 except ImportError:
     PYNPUT_AVAILABLE = False
     KEYBOARD_AVAILABLE = False
@@ -84,8 +85,11 @@ class MouseClickerGUI:
             from PIL import Image, ImageTk
             background_path = os.path.join(os.path.dirname(__file__), "background.png")
             if os.path.exists(background_path):
-                # 加载背景图片
+                # 加载背景图片，自动检测格式
                 bg_image = Image.open(background_path)
+                # 转换为RGB模式以确保兼容性
+                if bg_image.mode != 'RGB':
+                    bg_image = bg_image.convert('RGB')
                 # 调整图片大小以适应窗口
                 bg_image = bg_image.resize((600, 700), Image.Resampling.LANCZOS)
                 self.bg_photo = ImageTk.PhotoImage(bg_image)
@@ -96,12 +100,20 @@ class MouseClickerGUI:
                 
                 # 确保背景在最底层
                 bg_label.lower()
+                print("✅ 背景图片加载成功")
+            else:
+                print("⚠️ 背景图片文件不存在，使用默认背景")
         except Exception as e:
-            print(f"设置背景图片失败: {e}")
+            print(f"❌ 设置背景图片失败: {e}")
+            print("使用默认背景色")
+            self.root.configure(bg='#f0f0f0')
         
-        # 主框架 - 使用透明背景
+        # 主框架 - 确保可见性
         main_frame = ttk.Frame(self.root, padding="10")
         main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # 确保主框架在前景
+        main_frame.lift()
         
         # 配置网格权重
         self.root.columnconfigure(0, weight=1)
