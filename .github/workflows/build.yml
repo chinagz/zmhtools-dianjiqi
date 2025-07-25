@@ -56,28 +56,34 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
     
-    - name: Install dependencies
+    - name: Install dependencies (Windows)
+      if: matrix.os == 'windows-latest'
       timeout-minutes: 20
+      shell: cmd
       run: |
         python -m pip install --upgrade pip --no-warn-script-location
-        
-        # Windows平台使用更长的超时时间和重试机制
-        if [ "${{ matrix.os }}" = "windows-latest" ]; then
-          echo "Windows平台：安装依赖（带重试机制）"
-          pip install --no-warn-script-location --timeout=600 --retries=3 -r requirements.txt || (
-            echo "重试安装requirements.txt..."
-            pip install --no-warn-script-location --timeout=900 --retries=2 -r requirements.txt
-          )
-          pip install --no-warn-script-location --timeout=600 --retries=3 pyinstaller || (
-            echo "重试安装pyinstaller..."
-            pip install --no-warn-script-location --timeout=900 --retries=2 pyinstaller
-          )
-        else
-          echo "Unix平台：标准安装"
-          pip install --no-warn-script-location --timeout=300 -r requirements.txt
-          pip install --no-warn-script-location --timeout=300 pyinstaller
-        fi
-        
+        echo Windows平台：安装依赖（带重试机制）
+        pip install --no-warn-script-location --timeout=600 --retries=3 -r requirements.txt
+        if %ERRORLEVEL% NEQ 0 (
+          echo 重试安装requirements.txt...
+          pip install --no-warn-script-location --timeout=900 --retries=2 -r requirements.txt
+        )
+        pip install --no-warn-script-location --timeout=600 --retries=3 pyinstaller
+        if %ERRORLEVEL% NEQ 0 (
+          echo 重试安装pyinstaller...
+          pip install --no-warn-script-location --timeout=900 --retries=2 pyinstaller
+        )
+        echo 依赖安装完成
+    
+    - name: Install dependencies (Unix)
+      if: matrix.os != 'windows-latest'
+      timeout-minutes: 20
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip --no-warn-script-location
+        echo "Unix平台：标准安装"
+        pip install --no-warn-script-location --timeout=300 -r requirements.txt
+        pip install --no-warn-script-location --timeout=300 pyinstaller
         echo "依赖安装完成"
     
     - name: Build executable (Linux/macOS)
