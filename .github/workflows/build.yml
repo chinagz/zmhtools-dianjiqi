@@ -34,7 +34,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     
@@ -126,15 +126,30 @@ jobs:
         if-no-files-found: error
     
     - name: Upload to release (if release)
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
+      if: github.event_name == 'release' && steps.find_exe.outputs.executable_path != '' && !contains(steps.find_exe.outputs.executable_path, '.app')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ${{ steps.find_exe.outputs.executable_path }}
+        name: ${{ matrix.executable_name }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Create macOS app archive (if release and macOS)
+      if: github.event_name == 'release' && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+      run: |
+        cd dist
+        zip -r "${{ matrix.executable_name }}.zip" "${{ matrix.executable_name }}.app"
+        echo "app_archive_path=dist/${{ matrix.executable_name }}.zip" >> $GITHUB_OUTPUT
+      id: create_app_archive
+    
+    - name: Upload macOS app to release (if release)
+      if: github.event_name == 'release' && matrix.platform == 'macos' && contains(steps.find_exe.outputs.executable_path, '.app')
+      uses: softprops/action-gh-release@v1
       with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ${{ steps.find_exe.outputs.executable_path }}
-        asset_name: ${{ matrix.executable_name }}
-        asset_content_type: application/octet-stream
+        files: ${{ steps.create_app_archive.outputs.app_archive_path }}
+        name: ${{ matrix.executable_name }}.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # 创建一个汇总任务，收集所有平台的构建结果
   summary:
