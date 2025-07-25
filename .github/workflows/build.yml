@@ -46,11 +46,22 @@ jobs:
       with:
         python-version: '3.9'
     
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/pip
+          ${{ runner.os == 'Windows' && '~\AppData\Local\pip\Cache' || '~/.cache/pip' }}
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
     - name: Install dependencies
+      timeout-minutes: 15
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pyinstaller
+        python -m pip install --upgrade pip --no-warn-script-location
+        pip install --no-warn-script-location --timeout=300 -r requirements.txt
+        pip install --no-warn-script-location --timeout=300 pyinstaller
     
     - name: Build executable (Linux/macOS)
       if: matrix.os != 'windows-latest'

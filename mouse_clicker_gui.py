@@ -74,6 +74,10 @@ class MouseClickerGUI:
         self.mouse_listener = None
         self.keyboard_listener = None
         
+        # 全局快捷键监听器
+        self.global_hotkey_listener = None
+        self.setup_global_hotkeys()
+        
         self.setup_ui()
         self.update_position()
         
@@ -203,7 +207,7 @@ class MouseClickerGUI:
         self.delay_entry.grid(row=0, column=1, sticky=tk.W)
         
         # 录制回放功能
-        record_frame = ttk.LabelFrame(main_frame, text="录制回放功能 (支持鼠标+键盘)", padding="5")
+        record_frame = ttk.LabelFrame(main_frame, text="录制回放功能 (支持鼠标+键盘) - 快捷键: F9开始/F10停止", padding="5")
         record_frame.grid(row=6, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
         
         # 录制控制按钮
@@ -726,6 +730,78 @@ class MouseClickerGUI:
         
         self.recorded_actions = []
         self.log_message("已清空录制的操作")
+    
+    def setup_global_hotkeys(self):
+        """设置全局快捷键"""
+        if not KEYBOARD_AVAILABLE:
+            return
+            
+        try:
+            # 启动全局快捷键监听器
+            self.global_hotkey_listener = keyboard.Listener(
+                on_press=self.on_global_key_press
+            )
+            self.global_hotkey_listener.start()
+            self.log_message("✅ 全局快捷键已启用: F9开始录制, F10停止录制")
+        except Exception as e:
+            self.log_message(f"⚠️ 全局快捷键设置失败: {e}")
+    
+    def on_global_key_press(self, key):
+        """处理全局按键事件"""
+        try:
+            # 检查是否为功能键
+            if hasattr(key, 'name'):
+                key_name = key.name
+            elif hasattr(key, 'vk') and hasattr(keyboard.Key, 'f9'):
+                # 处理功能键
+                if key == keyboard.Key.f9:
+                    key_name = 'f9'
+                elif key == keyboard.Key.f10:
+                    key_name = 'f10'
+                else:
+                    return
+            else:
+                return
+            
+            # 处理快捷键
+            if key_name == 'f9':
+                if not self.is_recording:
+                    # 在主线程中执行UI操作
+                    self.root.after(0, self.start_recording_hotkey)
+            elif key_name == 'f10':
+                if self.is_recording:
+                    # 在主线程中执行UI操作
+                    self.root.after(0, self.stop_recording_hotkey)
+                    
+        except Exception as e:
+            # 忽略快捷键处理错误，避免影响正常功能
+            pass
+    
+    def start_recording_hotkey(self):
+        """通过快捷键开始录制"""
+        if not self.is_recording:
+            self.start_recording()
+            self.log_message("🎯 通过快捷键F9开始录制")
+    
+    def stop_recording_hotkey(self):
+        """通过快捷键停止录制"""
+        if self.is_recording:
+            self.stop_recording()
+            self.log_message("⏹️ 通过快捷键F10停止录制")
+    
+    def cleanup_listeners(self):
+        """清理所有监听器"""
+        if self.mouse_listener:
+            self.mouse_listener.stop()
+            self.mouse_listener = None
+            
+        if self.keyboard_listener:
+            self.keyboard_listener.stop()
+            self.keyboard_listener = None
+            
+        if self.global_hotkey_listener:
+            self.global_hotkey_listener.stop()
+            self.global_hotkey_listener = None
 
 def main():
     root = tk.Tk()
@@ -753,8 +829,23 @@ def main():
         pass
     except:
         pass
-        
-    root.mainloop()
+    
+    # 设置窗口关闭事件处理
+    def on_closing():
+        """窗口关闭时的清理工作"""
+        app.cleanup_listeners()
+        root.destroy()
+    
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+    
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        # 处理Ctrl+C中断
+        app.cleanup_listeners()
+    finally:
+        # 确保清理所有监听器
+        app.cleanup_listeners()
 
 if __name__ == '__main__':
     main()

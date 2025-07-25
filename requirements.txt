@@ -1,5 +1,18 @@
-pyautogui>=0.9.54
-pillow>=8.0.0
-pynput>=1.7.6
-# 注意: 建议使用Python 3.11或3.12以获得最佳兼容性
+# 核心依赖
+pyautogui>=0.9.54,<0.10.0
+pillow>=8.0.0,<11.0.0
+pynput>=1.7.6,<1.8.0
+
+# GUI相关依赖
+tkinter-tooltip>=2.0.0
+
+# 构建和打包依赖
+pyinstaller>=5.0.0,<7.0.0
+
+# 系统兼容性
+setuptools>=65.0.0
+wheel>=0.37.0
+
+# 注意: 建议使用Python 3.9-3.12以获得最佳兼容性
 # Python 3.13可能存在pynput兼容性问题
+# macOS用户如遇到pynput问题，可尝试降级到Python 3.11
